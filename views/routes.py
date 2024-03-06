@@ -45,10 +45,6 @@ def initialize_app():
 
     @app.route("/")
     def homepage():
-        db.session.query(Metrics).delete()
-        db.session.query(Processes).delete()
-        #db.session.query(Container).delete()
-        db.session.commit()
         is_empty = db.session.query(Metrics).count() == 0
         if not is_empty:
             return render_template("homepage.html")
