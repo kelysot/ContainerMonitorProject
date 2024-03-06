@@ -1,0 +1,354 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Monitoring System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='homepage.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='tabs.css') }}">
+    <script>
+        // Function to fetch and update metrics from the server
+        function updateMetrics() {
+            $.ajax({
+                url: '/get_metrics',
+                type: 'GET',
+                success: function(data) {
+                    if (data.message == 'No data available in the database') {
+                        window.location.href = "/no_data";
+                    }
+
+                    // Render circular graphs
+                    renderCircularGraph(data.memory_total - data.used_mem[(data.used_mem).length-1], data.used_mem[(data.used_mem).length-1], 'circular_graph1_canvas', 'Memory Uses');
+                    renderCircularGraph(data.disk_total - data.disk_used_plot.data[0], data.disk_used_plot.data[0], 'circular_graph2_canvas', 'Disk Uses');
+
+                    // Render real-time charts
+                    renderChart(data.cpu_plot, 'cpu_plot_canvas');
+                    renderChart(data.memory_plot, 'memory_plot_canvas');
+                    renderChart(data.disk_plot, 'disk_plot_canvas');
+                    renderChart(data.memory_used_plot, 'memory_used_plot_canvas');
+                    renderChart(data.disk_used_plot, 'disk_used_plot_canvas');
+
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching metrics:', error);
+                }
+            });
+        }
+
+       // Function to fetch and update metrics from the server last hour
+        function updateLastHourMetrics() {
+            $.ajax({
+                url: '/get_hour_metrics',
+                type: 'GET',
+                success: function(data) {
+                    // Render last hour charts
+                    renderChart(data.last_hour_cpu_plot, 'cpu_hourly_plot_canvas');
+                    renderChart(data.last_hour_memory_plot, 'memory_hourly_plot_canvas');
+                    renderChart(data.last_hour_disk_plot, 'disk_hourly_plot_canvas');
+                    renderChart(data.last_hour_memory_used_plot, 'memory_used_hourly_plot_canvas');
+                    renderChart(data.last_hour_disk_used_plot, 'disk_used_hourly_plot_canvas');
+            },
+            error: function(xhr, status, error) {
+                    console.error('Error fetching metrics:', error);
+                }
+            });
+        }
+
+        // Function to fetch and update metrics from the server last day
+        function updateLastDayMetrics() {
+            $.ajax({
+                url: '/get_day_metrics',
+                type: 'GET',
+                success: function(data) {
+                    // Render last day charts
+                    renderChart(data.last_day_cpu_plot, 'cpu_day_plot_canvas');
+                    renderChart(data.last_day_memory_plot, 'memory_day_plot_canvas');
+                    renderChart(data.last_day_disk_plot, 'disk_day_plot_canvas');
+                    renderChart(data.last_day_memory_used_plot, 'memory_used_day_plot_canvas');
+                    renderChart(data.last_day_disk_used_plot, 'disk_used_day_plot_canvas');
+            },
+            error: function(xhr, status, error) {
+                    console.error('Error fetching metrics:', error);
+                }
+            });
+        }
+
+        function renderChart(data, canvasId) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+
+            // Check if there's an existing chart on the canvas and destroy it
+            if (Chart.getChart(ctx)) {
+                Chart.getChart(ctx).destroy();
+            }
+
+            // Reverse the data arrays before rendering the chart
+            const reversedLabels = data.labels.slice().reverse();
+            const reversedData = data.data.slice().reverse();
+
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: reversedLabels,
+                    datasets: [{
+                        label: data.metric_type,
+                        data: reversedData,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        xAxes: [{
+                            type: 'time',
+                            time: {
+                                parser: 'HH:mm:ss',
+                                unit: 'second',
+                                displayFormats: {
+                                    second: 'HH:mm:ss'
+                                }
+                            },
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Time'
+                            }
+                        }],
+                        yAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: data.metric_type
+                            }
+                        }]
+                    }
+                }
+            });
+        }
+
+        function renderProcessesTable(processesData) {
+            const tableBody = document.getElementById('processes-table-body');
+            tableBody.innerHTML = ''; // Clear existing table rows
+
+            // Define the order of columns
+            const columns = ['PID', 'Name', 'CPU', 'Memory', 'Cmdline', 'Username', 'Num Threads', 'Num FDs', 'Status', 'Timestamp'];
+
+            // Get the number of rows based on the length of any column array
+            const numRows = processesData[columns[0]].length;
+
+            // Iterate through each row of data
+            for (let i = 0; i < numRows; i++) {
+                // Create a new row element
+                const row = document.createElement('tr');
+
+                // Iterate through each column
+                columns.forEach(column => {
+                    // Create a cell for each column
+                    const cell = document.createElement('td');
+                    // Get the value for the current row and column
+                    const value = processesData[column][i];
+                    // Set the cell content to the value, or an empty string if the value is undefined
+                    cell.textContent = value !== undefined ? value : '';
+                    // Append the cell to the row
+                    row.appendChild(cell);
+                });
+
+                // Append the row to the table body
+                tableBody.appendChild(row);
+            }
+        }
+
+        // Function to update process metrics
+        function updateProcessMetrics() {
+            $.ajax({
+                url: '/get_process_metrics',
+                type: 'GET',
+                success: function (data) {
+                    renderProcessesTable(data.processes_data);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error fetching process metrics:', error);
+                }
+            });
+        }
+
+        function renderCircularGraph(free_resource, used_resource, canvasId, label) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+
+            // Check if there's an existing chart on the canvas and destroy it
+            if (Chart.getChart(ctx)) {
+                Chart.getChart(ctx).destroy();
+            }
+
+            const chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Free', 'Used'],
+                    datasets: [{
+                        label: label,
+                        data: [free_resource, used_resource],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.5)', // Red
+                            'rgba(255, 192, 203, 1)' // Pink
+                        ],
+                        borderColor: [
+                            'rgba(255, 192, 203, 1)', // Red
+                            'rgba(255, 99, 132, 0.5)' // Pink
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    tooltips: {
+                        callbacks: {
+                            label: function(tooltipItem, data) {
+                                var datasetLabel = data.labels[tooltipItem.index] || '';
+                                var value = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
+                                return datasetLabel + ': ' + value + '%';
+                            }
+                        }
+                    }
+                }
+            });
+
+        }
+
+        // Periodically update metrics every 30 seconds
+        setInterval(updateMetrics, 30000);
+        setInterval(updateProcessMetrics, 30000);
+
+        // Function to be called every hour
+        setInterval(updateLastHourMetrics, 60 * 60 * 1000); // 60 minutes * 60 seconds * 1000 milliseconds = 1 hour
+
+        // Function to be called every 24 hours
+        setInterval(updateLastDayMetrics, 24 * 60 * 60 * 1000); // 24 hours * 60 minutes * 60 seconds * 1000 milliseconds = 1 day
+
+        // Initial call to update metrics when the page loads
+        $(document).ready(function() {
+            updateMetrics();
+            updateProcessMetrics();
+            updateLastHourMetrics();
+            updateLastDayMetrics();
+        });
+
+        // Function to show selected tab
+        function showTab(tabId) {
+            $('.tab-content').hide();
+            $('.canvas-container').removeClass('active');
+            $('.tab').removeClass('active');
+
+            $('#' + tabId + '-tab').addClass('active');
+            $('#' + tabId + '-canvas-container').addClass('active');
+
+            if (tabId === 'processes') {
+                $('#processes').show();
+                updateProcessMetrics();
+            } else {
+                $('#processes').hide();
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Linux Monitoring System</h1>
+    </div>
+
+    <div class="circular-chart-container">
+        <div class="circular-chart" id="memory-chart">
+            <h1>Memory Usage</h1>
+            <canvas id="circular_graph1_canvas" style="width: 10px; height: 10px;"></canvas>
+        </div>
+
+        <div class="circular-chart" id="disk-chart">
+            <h1>Disk Usage - Host</h1>
+            <canvas id="circular_graph2_canvas" style="width: 30px; height: 30px;"></canvas>
+        </div>
+    </div>
+
+    <div class="tabs-container">
+        <div class="tab" onclick="showTab('cpu')">
+            CPU Usage
+        </div>
+        <div class="tab" onclick="showTab('memory')">
+            Memory Usage
+        </div>
+        <div class="tab" onclick="showTab('disk')">
+            Disk Usage
+        </div>
+        <div class="tab" onclick="showTab('memory-used')">
+            Memory Used
+        </div>
+        <div class="tab" onclick="showTab('disk-used')">
+            Disk Used
+        </div>
+        <div class="tab" onclick="showTab('processes')">
+            Processes
+        </div>
+    </div>
+
+    <div id="cpu-canvas-container" class="canvas-container active">
+        <h1>CPU Usage Over Time</h1>
+        <canvas id="cpu_plot_canvas" width="400" height="200"></canvas>
+        <h1>CPU Usage in the Last Hour</h1>
+        <canvas id="cpu_hourly_plot_canvas" width="400" height="200"></canvas>
+        <h1>CPU Usage in the Last Day</h1>
+        <canvas id="cpu_day_plot_canvas" width="400" height="200"></canvas>
+    </div>
+    <div id="memory-canvas-container" class="canvas-container">
+        <h1>Memory Usage Over Time</h1>
+        <canvas id="memory_plot_canvas" width="400" height="200"></canvas>
+        <h1>Memory Usage in the Last Hour</h1>
+        <canvas id="memory_hourly_plot_canvas" width="400" height="200"></canvas>
+        <h1>Memory Usage in the Last Day</h1>
+        <canvas id="memory_day_plot_canvas" width="400" height="200"></canvas>
+    </div>
+    <div id="disk-canvas-container" class="canvas-container">
+        <h1>Disk Usage Over Time</h1>
+        <canvas id="disk_plot_canvas" width="400" height="200"></canvas>
+        <h1>Disk Usage in the Last Hour</h1>
+        <canvas id="disk_hourly_plot_canvas" width="400" height="200"></canvas>
+        <h1>Disk Usage in the Last Day</h1>
+        <canvas id="disk_day_plot_canvas" width="400" height="200"></canvas>
+    </div>
+    <div id="memory-used-canvas-container" class="canvas-container">
+        <h1>Memory Used Over Time</h1>
+        <canvas id="memory_used_plot_canvas" width="400" height="200"></canvas>
+        <h1>Memory Used in the Last Hour</h1>
+        <canvas id="memory_used_hourly_plot_canvas" width="400" height="200"></canvas>
+        <h1>Memory Used in the Last Day</h1>
+        <canvas id="memory_used_day_plot_canvas" width="400" height="200"></canvas>
+    </div>
+    <div id="disk-used-canvas-container" class="canvas-container">
+        <h1>Disk Used Over Time</h1>
+        <canvas id="disk_used_plot_canvas" width="400" height="200"></canvas>
+        <h1>Disk Used in the Last Hour</h1>
+        <canvas id="disk_used_hourly_plot_canvas" width="400" height="200"></canvas>
+        <h1>Disk Used in the Last Day</h1>
+        <canvas id="disk_used_day_plot_canvas" width="400" height="200"></canvas>
+    </div>
+
+    <div id="processes" class="tab-content" style="display: none;">
+         <table>
+            <thead>
+                <tr>
+                    <th>PID</th>
+                    <th>Name</th>
+                    <th>CPU</th>
+                    <th>Memory</th>
+                    <th>Cmdline</th>
+                    <th>Username</th>
+                    <th>Num Threads</th>
+                    <th>Num FDs</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody id="processes-table-body">
+
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

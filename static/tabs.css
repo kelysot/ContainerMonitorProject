@@ -1,0 +1,120 @@
+body {
+    background-color: black;
+    color: #00ff00;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th, td {
+    border: 1px solid #00ff00;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #000000;
+    color: #00ff00;
+}
+
+td {
+    color: #ffffff;
+}
+
+.container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.tabs-container {
+    display: flex;
+    justify-content: center;
+    background-color: black;
+    padding: 20px 0;
+    border-radius: 20px;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+    margin-bottom: 20px;
+}
+
+.tab {
+    padding: 10px 20px;
+    background-color: transparent;
+    color: white;
+    cursor: pointer;
+    border-radius: 20px;
+    margin: 0 10px;
+    transition: background-color 0.3s ease;
+    position: relative;
+}
+
+.tab:not(:last-child):after {
+    content: '';
+    position: absolute;
+    right: -10px;
+    top: 5px;
+    height: calc(100% - 10px);
+    width: 2px;
+    background-color: rgba(0, 255, 0, 0.5);
+}
+
+.tab:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.canvas-container {
+    display: none;
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.canvas-container.active {
+    display: block;
+    margin: 0 auto;
+    margin-left: 60px;
+}
+
+canvas {
+    max-width: 80%;
+    max-height: 300px;
+}
+
+.charts-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.chart {
+    margin-right: 20px;
+}
+
+.canvas-container {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+canvas {
+    max-width: 100%;
+    max-height: 200px;
+}
+
+.circular-chart-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    margin-bottom: 70px;
+    margin-left: 300px;
+    margin-right: 300px;
+}
+
+.circular-chart {
+    width: 45%;
+    text-align: center;
+}
+
+.circular-chart canvas {
+    max-width: 100%;
+    max-height: 200px;
+}
