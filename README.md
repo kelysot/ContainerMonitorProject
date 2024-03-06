@@ -56,7 +56,7 @@ Before running the project, ensure you have the following prerequisites installe
     docker build -t new_image:0.0.1 .
 6. Create and run the Docker container: (replace YOUR_PATH with the path to the project on your computer)
     ```bash
-    docker run -v /var/run/docker.sock:/var/run/docker.sock -v YOUR_PATH:/app/instance --name new_container new_image:0.0.1
+    docker run -v /var/run/docker.sock:/var/run/docker.sock -v YOUR_PATH/instance:/app/instance --name new_container new_image:0.0.1
 7. Run Flask app.
 
 ## Images
