@@ -75,4 +75,4 @@ Before running the project, ensure you have the following prerequisites installe
 
 ## Participants
 
-[Eden Arni](https://github.com/edenarni), [Waleed Ali](https://github.com/waleed399), Michal Burshtein, and [Kely Sotsky](https://github.com/kelysot)
+[Eden Arni](https://github.com/edenarni), [Waleed Ali](https://github.com/waleed399), [Michal_Burshtein](https://github.com/michal-bursh), and [Kely Sotsky](https://github.com/kelysot)
